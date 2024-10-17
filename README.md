@@ -56,7 +56,7 @@ python manage.py migrate
 **Load Sales Data**:
 To import sales data from a CSV file, run:
 ```bash
-python manage.py import_sales_data "path/to/your/filename.csv"
+python manage.py import_sales_data "sales_performance_data.csv"
 ```
 **Start the Development Server**:
 ```bash
