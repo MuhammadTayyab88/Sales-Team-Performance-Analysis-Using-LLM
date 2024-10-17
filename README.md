@@ -28,7 +28,6 @@ This Django project analyzes sales team performance using data from CSV files an
 1. **Clone the Repository**:
    ```bash
    git clone https://github.com/your-username/sales_project.git
-   cd sales_project
 
 **Create and Activate a Virtual Environment**:
 ```bash
@@ -47,7 +46,7 @@ pip install -r requirements.txt
 **Set Up Environment Variables**:
 Create a .env file in the project root directory and add your OpenAI API key:
 ```bash
-OPENAI_API_KEY=your_openai_api_key
+OPENAI_API_KEY ="sk-G8B-zacyp1S9JaYaXtdqe5Yd7yM7yqIg_hS7oXDVGyT3BlbkFJ-PX3RRG2RxHKIl14Tg5D_CeGmGM_4OV57E_K9SzCgA"
 ```
 **Run Migrations**:
 ```bash
@@ -57,7 +56,7 @@ python manage.py migrate
 **Load Sales Data**:
 To import sales data from a CSV file, run:
 ```bash
-python manage.py import_sales_data path/to/your/sales_data.csv
+python manage.py import_sales_data "path/to/your/filename.csv"
 ```
 **Start the Development Server**:
 ```bash
