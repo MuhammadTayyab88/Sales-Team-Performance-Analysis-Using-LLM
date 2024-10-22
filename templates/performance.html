@@ -1,367 +1,132 @@
+{% load static %}
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sales Performance Dashboard</title>
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <style>
-        /* General Styles */
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f4f4f9;
-            margin: 0;
-            padding: 20px;
-        }
-
-        h1 {
-            text-align: center;
-            font-size: 2.5rem;
-            color: #333;
-            margin-bottom: 30px;
-        }
-
-        h3, h4 {
-            color: #333;
-        }
-
-        /* Button Styles */
-        #selectEmployeeBtn {
-            display: inline-block;
-            background-color: #007BFF;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s ease;
-        }
-
-        #selectEmployeeBtn:hover {
-            background-color: #0056b3;
-        }
-
-        /* Dropdown Styles */
-        #employeeDropdown {
-            margin-top: 20px;
-            padding: 10px;
-            font-size: 1rem;
-            width: 300px;
-        }
-
-        /* Table Styles */
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background-color: white;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        th, td {
-            padding: 15px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #007BFF;
-            color: white;
-            font-weight: bold;
-        }
-
-        td {
-            border-bottom: 1px solid #ddd;
-        }
-
-        td:last-child, th:last-child {
-            border-right: none;
-        }
-
-        /* Spinner Styles */
-        .spinner {
-            display: none; /* Hidden by default */
-            margin: 20px auto;
-            border: 8px solid #f3f3f3;
-            border-top: 8px solid #3498db;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Responsive Styles */
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
-            table, th, td {
-                font-size: 0.9rem;
-            }
-
-            #employeeDropdown {
-                width: 100%;
-            }
-        }
-    </style>
-    <style>
-        /* Button Styles */
-.button {
-    display: inline-block;
-    background-color: #007BFF;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin: 20px 0;
-}
-
-.button:hover {
-    background-color: #0056b3;
-}
-
-/* Table Styles */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-}
-
-th, td {
-    padding: 15px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-th {
-    background-color: #007BFF;
-    color: white;
-    font-weight: bold;
-}
-
-td {
-    background-color: #f9f9f9;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-    table, th, td {
-        font-size: 0.9rem;
-    }
-
-    .button {
-        width: 100%;
-        text-align: center;
-        padding: 15px;
-    }
-}
-
-    </style>
-    <style>
-        /* Button Styles */
-.button {
-    display: inline-block;
-    background-color: #007BFF;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-    margin: 20px 0;
-}
-
-.button:hover {
-    background-color: #0056b3;
-}
-
-/* Dropdown Styles */
-#teamDropdown {
-    margin-top: 20px;
-    padding: 10px;
-    font-size: 1rem;
-    width: 300px;
-    display: none;  /* Initially hidden */
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-
-/* Spinner Styles */
-.spinner {
-    display: none;  /* Hidden by default */
-    margin: 20px auto;
-    border: 8px solid #f3f3f3;
-    border-top: 8px solid #3498db;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    animation: spin 2s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
-/* Table Styles */
-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin-top: 20px;
-    background-color: white;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
-}
-
-th, td {
-    padding: 15px;
-    text-align: left;
-    border: 1px solid #ddd;
-}
-
-th {
-    background-color: #007BFF;
-    color: white;
-    font-weight: bold;
-}
-
-td {
-    background-color: #f9f9f9;
-}
-
-tr:nth-child(even) {
-    background-color: #f1f1f1;
-}
-
-/* Headings for tables inside team performance */
-h3, h4 {
-    color: #333;
-    margin-top: 20px;
-}
-
-/* Responsive Styles */
-@media (max-width: 768px) {
-    .button {
-        width: 100%;
-        padding: 15px;
-        text-align: center;
-    }
-
-    table, th, td {
-        font-size: 0.9rem;
-    }
-
-    #teamDropdown {
-        width: 100%;
-    }
-}
-
-    </style>
 </head>
 <body>
     <div>
-        <!-- Project Heading -->
         <h1>Sales Performance Dashboard</h1>
-        
-        <!-- Button to open dropdown -->
-        <button id="selectEmployeeBtn">Select Sales Representative</button>
-        
-        <!-- Dropdown to select employee -->
-        <select id="employeeDropdown" style="display:none;">
-            <option value="">Select Employee</option>
-            {% for employee in employees %}
-                <option value="{{ employee.employee_id }}">{{ employee.employee_id }}</option>
-            {% endfor %}
-        </select>
+        <button id="selectEmployeeBtn" class="button">Select Sales Representative</button>
 
-        <!-- Spinner -->
-        <div class="spinner" id="loadingSpinner"></div>
+    <!-- Employee Dropdown -->
+    <!-- Employee Dropdown -->
+<select id="employeeDropdown" style="display:none;">
+    <option value="">Select Employee</option>
+    {% for employee in employees %}
+        <option value="{{ employee.employee_name }}">{{ employee.employee_name }}</option>
+    {% endfor %}
+</select>
 
-        <!-- Table to display sales performance data -->
-        <div id="performanceTable" style="display:none;">
-            <h3>Sales Performance for <span id="repName"></span></h3>
-            <table border="1">
-                <tr>
-                    <th>Total Leads Taken</th>
-                    <th>Tours Booked</th>
-                    <th>Applications</th>
-                    <th>Tours per Lead</th>
-                    <th>Apps per Tour</th>
-                    <th>Apps per Lead</th>
-                </tr>
-                <tr>
-                    <td id="totalLeads"></td>
-                    <td id="toursBooked"></td>
-                    <td id="applications"></td>
-                    <td id="toursPerLead"></td>
-                    <td id="appsPerTour"></td>
-                    <td id="appsPerLead"></td>
-                </tr>
-            </table>
+<!-- Date Dropdown -->
+<select id="dateDropdown" style="display:none;">
+    <option value="">Select Date</option>
+</select>
 
-            <h4>Text Messages Sent</h4>
-            <table border="1">
-                <tr>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                    <th>Sun</th>
-                </tr>
-                <tr>
-                    <td id="monText"></td>
-                    <td id="tueText"></td>
-                    <td id="wedText"></td>
-                    <td id="thuText"></td>
-                    <td id="friText"></td>
-                    <td id="satText"></td>
-                    <td id="sunText"></td>
-                </tr>
-            </table>
+<!-- Button to fetch performance data -->
+<button id="fetchPerformanceBtn" class="button" style="display:none;">Fetch Performance Data</button>
+<div class="spinner" id="loadingSpinner" style="display:none;"></div>
 
-            <h4>Calls Made</h4>
-            <table border="1">
-                <tr>
-                    <th>Mon</th>
-                    <th>Tue</th>
-                    <th>Wed</th>
-                    <th>Thu</th>
-                    <th>Fri</th>
-                    <th>Sat</th>
-                    <th>Sun</th>
-                </tr>
-                <tr>
-                    <td id="monCall"></td>
-                    <td id="tueCall"></td>
-                    <td id="wedCall"></td>
-                    <td id="thuCall"></td>
-                    <td id="friCall"></td>
-                    <td id="satCall"></td>
-                    <td id="sunCall"></td>
-                </tr>
-            </table>
-        </div>
-    </div>
-    <button id="getMonthlyTrendsBtn" class="button">Get Monthly Performance Trends</button>
+<!-- Performance Table -->
+<div id="performanceTable" style="display:none;">
+    <h3>Sales Performance for <span id="repName"></span></h3>
+    
+    <!-- Main Performance Table -->
+    <table id="individualPerformanceTable">
+        <thead>
+            <tr>
+                <th>Total Leads Taken</th>
+                <th>Total Tours Booked</th>
+                <th>Total Applications</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="individualTotalLeads"></td>
+                <td id="individualTotalTours"></td>
+                <td id="individualTotalApplications"></td>
+            </tr>
+        </tbody>
+    </table>
 
-                <!-- Table to display monthly performance trends -->
+    <!-- Text Messages Sent Table -->
+    <h4>Text Messages Sent</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+                <th>Sat</th>
+                <th>Sun</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="individualMonText"></td>
+                <td id="individualTueText"></td>
+                <td id="individualWedText"></td>
+                <td id="individualThuText"></td>
+                <td id="individualFriText"></td>
+                <td id="individualSatText"></td>
+                <td id="individualSunText"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Calls Made Table -->
+    <h4>Calls Made</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+                <th>Sat</th>
+                <th>Sun</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td id="individualMonCall"></td>
+                <td id="individualTueCall"></td>
+                <td id="individualWedCall"></td>
+                <td id="individualThuCall"></td>
+                <td id="individualFriCall"></td>
+                <td id="individualSatCall"></td>
+                <td id="individualSunCall"></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+   
+<br>
+<button id="getMonthlyTrendsBtn" class="button">Get Monthly Performance Trends</button>
+
+<!-- Date Picker for Date Range -->
+<div id="datePickerContainer">
+    <label for="fromDate">From: </label>
+    <input type="date" id="fromDate">
+    <label for="toDate">To: </label>
+    <input type="date" id="toDate">
+    <button id="fetchPerformanceTrendsBtn" class="button">Fetch Performance Data</button>
+    <p id="errorMessage">Please select dates within the valid range.</p>
+</div>
+
+<!-- Table to display monthly performance trends -->
 <div id="monthlyTrendsTable" style="display:none;">
     <h3>Monthly Performance Trends</h3>
-    <table border="1">
+    <table>
         <thead>
             <tr>
                 <th>Month</th>
@@ -376,237 +141,94 @@ h3, h4 {
     </table>
 </div>
 <br>
+    <button id="getTeamPerformanceBtn" class="button">Get Team Performance</button>
+    <select id="teamDropdown" class="dropdown" style="display:none;">
+        <option value="">Select Team</option>
+        {% for employee in employees %}
+            <option value="{{ employee.employee_name }}">{{ employee.employee_name }}</option>
+        {% endfor %}
+    </select>
 
-<button id="getTeamPerformanceBtn" class="button">Get Team Performance</button>
+    <div id="teamPerformanceTable" class="data-table" style="display:none;">
+        <h3>Team Performance</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Total Leads Taken</th>
+                    <th>Total Tours Booked</th>
+                    <th>Total Applications</th>
+                    <th>Tours per Lead</th>
+                    <th>Apps per Tour</th>
+                    <th>Apps per Lead</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="teamTotalLeads"></td>
+                    <td id="teamTotalTours"></td>
+                    <td id="teamTotalApplications"></td>
+                    <td id="teamToursPerLead"></td>
+                    <td id="teamAppsPerTour"></td>
+                    <td id="teamAppsPerLead"></td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                    <th>Sun</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="teamMonText"></td>
+                    <td id="teamTueText"></td>
+                    <td id="teamWedText"></td>
+                    <td id="teamThuText"></td>
+                    <td id="teamFriText"></td>
+                    <td id="teamSatText"></td>
+                    <td id="teamSunText"></td>
+                </tr>
+            </tbody>
+        </table>
+        <br>
+        <table>
+            <thead>
+                <tr>
+                    <th>Mon</th>
+                    <th>Tue</th>
+                    <th>Wed</th>
+                    <th>Thu</th>
+                    <th>Fri</th>
+                    <th>Sat</th>
+                    <th>Sun</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td id="teamMonCall"></td>
+                    <td id="teamTueCall"></td>
+                    <td id="teamWedCall"></td>
+                    <td id="teamThuCall"></td>
+                    <td id="teamFriCall"></td>
+                    <td id="teamSatCall"></td>
+                    <td id="teamSunCall"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
 
-<!-- Dropdown to select a team -->
-<select id="teamDropdown" style="display:none;">
-    <option value="">Select Team</option>
-    {% for employee in employees %} <!-- Assuming 'employees' is passed from the backend -->
-        <option value="{{ employee.employee_name }}">{{ employee.employee_name }}</option>
-    {% endfor %}
-</select>
-
-<!-- Spinner to show loading status -->
-<div class="spinner" id="loadingSpinner"></div>
-
-<!-- Table to display team performance insights -->
-<div id="teamPerformanceTable" style="display:none;">
-    <h3>Team Performance</h3>
-    <table border="1">
-        <thead>
-            <tr>
-                <th>Total Leads Taken</th>
-                <th>Total Tours Booked</th>
-                <th>Total Applications</th>
-                <th>Tours per Lead</th>
-                <th>Apps per Tour</th>
-                <th>Apps per Lead</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr>
-                <td id="teamTotalLeads"></td>
-                <td id="teamTotalTours"></td>
-                <td id="teamTotalApplications"></td>
-                <td id="teamToursPerLead"></td>
-                <td id="teamAppsPerTour"></td>
-                <td id="teamAppsPerLead"></td>
-            </tr>
-        </tbody>
-    </table>
-</div>
-    <script>
-        $('#selectEmployeeBtn').click(function() {
-            $('#employeeDropdown').toggle();
-        });
+    <script src="{% static 'js/scripts.js' %}"></script>
+   
     
-        $('#employeeDropdown').change(function() {
-            const employeeId = $(this).val();
-            if (employeeId) {
-                // Show the loading spinner
-                $('#loadingSpinner').show();
-                $('#performanceTable').hide();
-    
-                console.log("Fetching data for Employee ID: " + employeeId);  // Debug
-    
-                $.ajax({
-                    url: `/api/rep_performance/${employeeId}/`,
-                    type: 'GET',
-                    success: function(response) {
-                        console.log("API response: ", response);  // Debug: Print the API response
-    
-                        const data = response.insight;
-                        if (data) {
-                            console.log("Text Messages Sent: ", data.Text_Messages_Sent);  // Debug the issue
-    
-                            // Handle missing properties safely with default values
-                            const textMessages = data.Text_Messages_Sent || {};
-                            const callsMade = data.Calls_Made || {};
-    
-                            $('#repName').text(data["Analyze the following sales data for sales representative"]);
-                            $('#totalLeads').text(data.total_lead_taken);
-                            $('#toursBooked').text(data.Tours_Booked);
-                            $('#applications').text(data.Applications);
-                            $('#toursPerLead').text(data.Tours_per_Lead);
-                            $('#appsPerTour').text(data.Apps_per_Tour);
-                            $('#appsPerLead').text(data.Apps_per_Lead);
-    
-                            // Safely access the text message data with fallbacks
-                            $('#monText').text(textMessages.Mon || 'N/A');
-                            $('#tueText').text(textMessages.Tue || 'N/A');
-                            $('#wedText').text(textMessages.Wed || 'N/A');
-                            $('#thuText').text(textMessages.Thu || 'N/A');
-                            $('#friText').text(textMessages.Fri || 'N/A');
-                            $('#satText').text(textMessages.Sat || 'N/A');
-                            $('#sunText').text(textMessages.Sun || 'N/A');
-    
-                            // Safely access the call data with fallbacks
-                            $('#monCall').text(callsMade.Mon || 'N/A');
-                            $('#tueCall').text(callsMade.Tue || 'N/A');
-                            $('#wedCall').text(callsMade.Wed || 'N/A');
-                            $('#thuCall').text(callsMade.Thu || 'N/A');
-                            $('#friCall').text(callsMade.Fri || 'N/A');
-                            $('#satCall').text(callsMade.Sat || 'N/A');
-                            $('#sunCall').text(callsMade.Sun || 'N/A');
-    
-                            // Hide the loading spinner and show the table
-                            $('#loadingSpinner').hide();
-                            $('#performanceTable').show();
-                        } else {
-                            console.error('No data received from the API.');
-                            alert('No data available for this employee.');
-                            $('#loadingSpinner').hide();  // Hide spinner even on failure
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('AJAX error: ', error);  // Debug: Print error details
-                        alert('Failed to fetch sales performance data.');
-                        $('#loadingSpinner').hide();  // Hide spinner on failure
-                    }
-                });
-            }
-        });
-    </script>
-    <script>
-       // Fetch monthly performance trends when the button is clicked
-$('#getMonthlyTrendsBtn').click(function() {
-    showSpinner();  // Show spinner
-    $('#monthlyTrendsTable').hide();  // Hide the table while fetching data
-    
-    $.ajax({
-        url: '/api/performance_trends/?time_period=monthly',
-        type: 'GET',
-        success: function(response) {
-            console.log("Monthly Performance Trends Response: ", response);  // Debugging purposes
-
-            // Populate the table with monthly performance data
-            const data = response.monthly_data;
-            let tableBody = '';
-            for (let month in data) {
-                tableBody += `<tr>
-                    <td>${month}</td>
-                    <td>${data[month].leads}</td>
-                    <td>${data[month].tours}</td>
-                    <td>${data[month].applications}</td>
-                </tr>`;
-            }
-
-            // Insert the rows into the table body and show the table
-            $('#monthlyTrendsBody').html(tableBody);
-            hideSpinner();  // Hide spinner once data is populated
-            $('#monthlyTrendsTable').show();  // Show the table
-        },
-        error: function(xhr, status, error) {
-            console.error("Error fetching monthly performance trends:", error);  // Log the error
-            alert('Failed to fetch monthly performance trends.');
-            hideSpinner();  // Hide spinner on failure
-        }
-    });
-});
-
-// Utility functions for showing and hiding the spinner
-function showSpinner() {
-    $('#loadingSpinner').show();  // Show the spinner
-    $('#teamPerformanceTable').hide();  // Hide the performance table while loading
-}
-
-function hideSpinner() {
-    $('#loadingSpinner').hide();  // Hide the spinner
-}
-
-    </script>
-    
-    <script>
-        $('#getTeamPerformanceBtn').click(function() {
-    $('#teamDropdown').toggle();  // Show/Hide team dropdown
-});
-
-// Fetch team performance when a team is selected
-$('#teamDropdown').change(function() {
-    const selectedTeamName = $(this).val();  // Get selected team name
-    if (!selectedTeamName) {
-        alert('Please select a team to view its performance.');
-        return;
-    }
-
-    showSpinner();
-    $('#teamPerformanceTable').hide();
-
-    // Fetch team performance data
-    $.ajax({
-    url: `/api/team_performance/${selectedTeamName}/`,
-    method: 'GET',
-    success: function(response) {
-        console.log(response);  // Debug: Check the response
-        // Continue with the code for displaying the data...
-    },
-    error: function() {
-        alert('Error fetching team performance.');
-        $('#loadingSpinner').hide();  // Hide spinner on failure
-    
-
-
-            // Hide spinner and display team performance table
-            hideSpinner();
-            $('#teamPerformanceTable').show();
-
-            // Populate the team performance table with data
-            $('#teamTotalLeads').text(teamData.total_leads_taken);
-            $('#teamTotalTours').text(teamData.total_tours_booked);
-            $('#teamTotalApplications').text(teamData.total_applications);
-            $('#teamToursPerLead').text(teamData.conversion_ratios.tours_per_lead.toFixed(2));
-            $('#teamAppsPerTour').text(teamData.conversion_ratios.apps_per_tour.toFixed(2));
-            $('#teamAppsPerLead').text(teamData.conversion_ratios.apps_per_lead.toFixed(2));
-
-            // Populate text message data
-            $('#teamMonText').text(teamData.total_text_messages_sent.Mon);
-            $('#teamTueText').text(teamData.total_text_messages_sent.Tue);
-            $('#teamWedText').text(teamData.total_text_messages_sent.Wed);
-            $('#teamThuText').text(teamData.total_text_messages_sent.Thu);
-            $('#teamFriText').text(teamData.total_text_messages_sent.Fri);
-            $('#teamSatText').text(teamData.total_text_messages_sent.Sat);
-            $('#teamSunText').text(teamData.total_text_messages_sent.Sun);
-
-            // Populate call data
-            $('#teamMonCall').text(teamData.total_calls_made.Mon);
-            $('#teamTueCall').text(teamData.total_calls_made.Tue);
-            $('#teamWedCall').text(teamData.total_calls_made.Wed);
-            $('#teamThuCall').text(teamData.total_calls_made.Thu);
-            $('#teamFriCall').text(teamData.total_calls_made.Fri);
-            $('#teamSatCall').text(teamData.total_calls_made.Sat);
-            $('#teamSunCall').text(teamData.total_calls_made.Sun);
-        },
-        error: function() {
-            alert('Error fetching team performance.');
-            hideSpinner();  // Hide spinner on failure
-        }
-    });
-});
-
-    </script>
-    
-    
+ 
     
 </body>
 </html>

@@ -9,8 +9,8 @@ class SalesRecord(models.Model):
     apps_per_lead = models.FloatField()
     tours_per_lead = models.FloatField()
     apps_per_tour = models.FloatField()
-    created_at = models.DateTimeField(null=True, blank=True)
-    # Add fields for communication metrics
+    created_at = models.DateTimeField(null=True, blank=True)  # stores the 'dated' from CSV
+    
     mon_text = models.IntegerField()
     tue_text = models.IntegerField()
     wed_text = models.IntegerField()
@@ -18,6 +18,7 @@ class SalesRecord(models.Model):
     fri_text = models.IntegerField()
     sat_text = models.IntegerField()
     sun_text = models.IntegerField()
+    
     mon_call = models.IntegerField()
     tue_call = models.IntegerField()
     wed_call = models.IntegerField()
@@ -26,6 +27,8 @@ class SalesRecord(models.Model):
     sat_call = models.IntegerField()
     sun_call = models.IntegerField()
 
+    class Meta:
+        unique_together = ('employee_name', 'created_at')  # ensures name + date uniqueness
+    
     def __str__(self):
-        return self.employee_name
-
+        return f"{self.employee_name} - {self.created_at}"

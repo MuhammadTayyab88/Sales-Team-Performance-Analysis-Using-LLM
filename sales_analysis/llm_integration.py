@@ -1,188 +1,249 @@
 import openai
 from django.conf import settings
-from django.utils import timezone
-import calendar
+import json
 from django.db.models import Sum
-# Set up OpenAI API key from Django settings
+from sales_analysis.models import SalesRecord
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.http import JsonResponse
+from rest_framework.decorators import api_view
+import logging
+
+logger = logging.getLogger(__name__)
+
+# Ensure OpenAI API key is set from Django settings
 openai.api_key = settings.OPENAI_API_KEY
 
-def preprocess_data(sales_data):
+def get_individual_insight(employee_name, selected_date=None):
     """
-    Preprocess the team sales data to format it for LLM input.
+    Retrieve and return performance data for an individual employee.
+    If a date is provided, data for that specific date will be retrieved.
     """
-    processed_data = []
-    for record in sales_data:
-        if record.created_at:  # Skip records where 'created_at' is None
-            processed_data.append(
-                f"Employee ID: {record.employee_id}, Name: {record.employee_name}, "
-                f"Leads Taken: {record.lead_taken}, Tours Booked: {record.tours_booked}, "
-                f"Applications: {record.applications}, Apps per Lead: {record.apps_per_lead}, "
-                f"Tours per Lead: {record.tours_per_lead}, Apps per Tour: {record.apps_per_tour}, "
-                f"Month: {calendar.month_name[record.created_at.month]}"
-            )
-        else:
-            print(f"Skipping record {record.id} due to missing created_at")
 
-def get_individual_insight(employee_data):
-    prompt = (
-        f"Analyze the following sales data for sales representative {employee_data.employee_name}:\n\n"
-        f"- Total Leads Taken: {employee_data.lead_taken}\n"
-        f"- Tours Booked: {employee_data.tours_booked}\n"
-        f"- Applications: {employee_data.applications}\n"
-        f"- Tours per Lead: {employee_data.tours_per_lead}\n"
-        f"- Apps per Tour: {employee_data.apps_per_tour}\n"
-        f"- Apps per Lead: {employee_data.apps_per_lead}\n\n"
-        f"Additionally, here are weekly communications data:\n"
-        f"- Text Messages Sent: Mon: {employee_data.mon_text}, Tue: {employee_data.tue_text}, "
-        f"Wed: {employee_data.wed_text}, Thu: {employee_data.thur_text}, Fri: {employee_data.fri_text}, "
-        f"Sat: {employee_data.sat_text}, Sun: {employee_data.sun_text}\n"
-        f"- Calls Made: Mon: {employee_data.mon_call}, Tue: {employee_data.tue_call}, "
-        f"Wed: {employee_data.wed_call}, Thu: {employee_data.thur_call}, Fri: {employee_data.fri_call}, "
-        f"Sat: {employee_data.sat_call}, Sun: {employee_data.sun_call}\n\n"
-        "Based on this data, provide detailed feedback on performance and actionable insights for improvement."
-    )
+    # Ensure `employee_name` and `selected_date` are passed in correctly
+    if not employee_name:
+        raise ValueError("employee_name is required")
     
-    # Call to OpenAI API for feedback
+    # Query database for performance data based on employee_name and selected_date
+    if selected_date:
+        performance_data = SalesRecord.objects.filter(employee_name=employee_name, created_at__date=selected_date)
+    else:
+        performance_data = SalesRecord.objects.filter(employee_name=employee_name)
+
+    # Ensure there's performance data for this employee and date
+    if not performance_data.exists():
+        return json.dumps({"error": "No performance data found for the selected employee and date."})
+
+    # Aggregate individual performance data
+    individual_performance = performance_data.aggregate(
+        total_leads_taken=Sum('lead_taken'),
+        total_tours_booked=Sum('tours_booked'),
+        total_applications=Sum('applications'),
+        total_mon_text=Sum('mon_text'),
+        total_tue_text=Sum('tue_text'),
+        total_wed_text=Sum('wed_text'),
+        total_thur_text=Sum('thur_text'),
+        total_fri_text=Sum('fri_text'),
+        total_sat_text=Sum('sat_text'),
+        total_sun_text=Sum('sun_text'),
+        total_mon_call=Sum('mon_call'),
+        total_tue_call=Sum('tue_call'),
+        total_wed_call=Sum('wed_call'),
+        total_thur_call=Sum('thur_call'),
+        total_fri_call=Sum('fri_call'),
+        total_sat_call=Sum('sat_call'),
+        total_sun_call=Sum('sun_call'),
+    )
+
+    # Formulate prompt for OpenAI based on performance data
+    prompt = (
+        f"Strictly analyze the sales data for employee {employee_name} on the selected date {selected_date}:\n\n"
+        f"- Total Leads Taken: {individual_performance['total_leads_taken']}\n"
+        f"- Tours Booked: {individual_performance['total_tours_booked']}\n"
+        f"- Applications: {individual_performance['total_applications']}\n"
+        f"- Weekly Text Messages: Mon: {individual_performance['total_mon_text']}, Tue: {individual_performance['total_tue_text']}, "
+        f"Wed: {individual_performance['total_wed_text']}, Thu: {individual_performance['total_thur_text']}, "
+        f"Fri: {individual_performance['total_fri_text']}, Sat: {individual_performance['total_sat_text']}, "
+        f"Sun: {individual_performance['total_sun_text']}\n"
+        f"- Weekly Calls Made: Mon: {individual_performance['total_mon_call']}, Tue: {individual_performance['total_tue_call']}, "
+        f"Wed: {individual_performance['total_wed_call']}, Thu: {individual_performance['total_thur_call']}, "
+        f"Fri: {individual_performance['total_fri_call']}, Sat: {individual_performance['total_sat_call']}, "
+        f"Sun: {individual_performance['total_sun_call']}\n\n"
+        "Strictly provide performance insights and areas of improvement based on this data."
+    )
+
+    # Call OpenAI API for feedback
     response = openai.ChatCompletion.create(
         model="gpt-4",
         messages=[
-            {"role": "system", "content": "You are an expert sales analyst."},
+            {"role": "system", "content": "You are a strict sales analyst."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=1000
     )
-    
-    return {
-        "Analyze the following sales data for sales representative": employee_data.employee_name,
-        "total_lead_taken": employee_data.lead_taken,
-        "Tours_Booked": employee_data.tours_booked,
-        "Applications": employee_data.applications,
-        "Tours_per_Lead": employee_data.tours_per_lead,
-        "Apps_per_Tour": employee_data.apps_per_tour,
-        "Apps_per_Lead": employee_data.apps_per_lead,
-        "Text_Messages_Sent": {
-            "Mon": employee_data.mon_text,
-            "Tue": employee_data.tue_text,
-            "Wed": employee_data.wed_text,
-            "Thu": employee_data.thur_text,
-            "Fri": employee_data.fri_text,
-            "Sat": employee_data.sat_text,
-            "Sun": employee_data.sun_text
+
+    # Return the performance data and LLM feedback in JSON format
+    result = {
+        "employee_name": employee_name,
+        "total_leads_taken": individual_performance['total_leads_taken'],
+        "total_tours_booked": individual_performance['total_tours_booked'],
+        "total_applications": individual_performance['total_applications'],
+        "total_text_messages_sent": {
+            "Mon": individual_performance['total_mon_text'],
+            "Tue": individual_performance['total_tue_text'],
+            "Wed": individual_performance['total_wed_text'],
+            "Thu": individual_performance['total_thur_text'],
+            "Fri": individual_performance['total_fri_text'],
+            "Sat": individual_performance['total_sat_text'],
+            "Sun": individual_performance['total_sun_text']
         },
-        "Calls_Made": {
-            "Mon": employee_data.mon_call,
-            "Tue": employee_data.tue_call,
-            "Wed": employee_data.wed_call,
-            "Thu": employee_data.thur_call,
-            "Fri": employee_data.fri_call,
-            "Sat": employee_data.sat_call,
-            "Sun": employee_data.sun_call
+        "total_calls_made": {
+            "Mon": individual_performance['total_mon_call'],
+            "Tue": individual_performance['total_tue_call'],
+            "Wed": individual_performance['total_wed_call'],
+            "Thu": individual_performance['total_thur_call'],
+            "Fri": individual_performance['total_fri_call'],
+            "Sat": individual_performance['total_sat_call'],
+            "Sun": individual_performance['total_sun_call']
         },
-        # "LLM Feedback": response['choices'][0]['message']['content'].strip()
+        "LLM_feedback": response['choices'][0]['message']['content'].strip()
     }
 
+    return json.dumps(result)  # Return as a JSON response
 
+#team performance
+def get_team_insight(team_name):
+    # Query the database for all performance data for the selected team
+    team_performance_data = SalesRecord.objects.filter(employee_name=team_name)
 
-
-
-def get_team_insight(sales_data):
-    """
-    Generate insights for team performance using key metrics.
-    """
-
-    # Aggregating team performance data by summing the values
-    total_leads_taken = sum([record.lead_taken for record in sales_data])
-    total_tours_booked = sum([record.tours_booked for record in sales_data])
-    total_applications = sum([record.applications for record in sales_data])
+    # Aggregate team performance by summing up all values
+    team_performance = team_performance_data.aggregate(
+        total_leads_taken=Sum('lead_taken'),
+        total_tours_booked=Sum('tours_booked'),
+        total_applications=Sum('applications'),
+        total_mon_text=Sum('mon_text'),
+        total_tue_text=Sum('tue_text'),
+        total_wed_text=Sum('wed_text'),
+        total_thur_text=Sum('thur_text'),
+        total_fri_text=Sum('fri_text'),
+        total_sat_text=Sum('sat_text'),
+        total_sun_text=Sum('sun_text'),
+        total_mon_call=Sum('mon_call'),
+        total_tue_call=Sum('tue_call'),
+        total_wed_call=Sum('wed_call'),
+        total_thur_call=Sum('thur_call'),
+        total_fri_call=Sum('fri_call'),
+        total_sat_call=Sum('sat_call'),
+        total_sun_call=Sum('sun_call'),
+    )
 
     # Calculate conversion ratios
-    tours_per_lead = total_tours_booked / total_leads_taken if total_leads_taken > 0 else 0
-    apps_per_tour = total_applications / total_tours_booked if total_tours_booked > 0 else 0
-    apps_per_lead = total_applications / total_leads_taken if total_leads_taken > 0 else 0
+    if team_performance['total_leads_taken'] > 0 and team_performance['total_tours_booked'] > 0:
+        conversion_ratios = {
+            'tours_per_lead': team_performance['total_tours_booked'] / team_performance['total_leads_taken'],
+            'apps_per_tour': team_performance['total_applications'] / team_performance['total_tours_booked'],
+            'apps_per_lead': team_performance['total_applications'] / team_performance['total_leads_taken']
+        }
+    else:
+        conversion_ratios = {
+            'tours_per_lead': 0,
+            'apps_per_tour': 0,
+            'apps_per_lead': 0
+        }
 
-    # Communication data aggregation (per day of the week)
-    total_text_messages_sent = {
-        "Mon": sum([record.mon_text for record in sales_data]),
-        "Tue": sum([record.tue_text for record in sales_data]),
-        "Wed": sum([record.wed_text for record in sales_data]),
-        "Thu": sum([record.thur_text for record in sales_data]),
-        "Fri": sum([record.fri_text for record in sales_data]),
-        "Sat": sum([record.sat_text for record in sales_data]),
-        "Sun": sum([record.sun_text for record in sales_data]),
-    }
-
-    total_calls_made = {
-        "Mon": sum([record.mon_call for record in sales_data]),
-        "Tue": sum([record.tue_call for record in sales_data]),
-        "Wed": sum([record.wed_call for record in sales_data]),
-        "Thu": sum([record.thur_call for record in sales_data]),
-        "Fri": sum([record.fri_call for record in sales_data]),
-        "Sat": sum([record.sat_call for record in sales_data]),
-        "Sun": sum([record.sun_call for record in sales_data]),
-    }
-
-    # Return the insights in a JSON-friendly format
+    # Return all performance data
     return {
-        "total_leads_taken": total_leads_taken,
-        "total_tours_booked": total_tours_booked,
-        "total_applications": total_applications,
-        "conversion_ratios": {
-            "tours_per_lead": tours_per_lead,
-            "apps_per_tour": apps_per_tour,
-            "apps_per_lead": apps_per_lead,
+        "team_name": team_name,
+        "total_leads_taken": team_performance['total_leads_taken'],
+        "total_tours_booked": team_performance['total_tours_booked'],
+        "total_applications": team_performance['total_applications'],
+        "conversion_ratios": conversion_ratios,
+        "total_text_messages_sent": {
+            "Mon": team_performance['total_mon_text'],
+            "Tue": team_performance['total_tue_text'],
+            "Wed": team_performance['total_wed_text'],
+            "Thu": team_performance['total_thur_text'],
+            "Fri": team_performance['total_fri_text'],
+            "Sat": team_performance['total_sat_text'],
+            "Sun": team_performance['total_sun_text']
         },
-        "total_text_messages_sent": total_text_messages_sent,
-        "total_calls_made": total_calls_made,
-        "team_performance_summary": "Team performance analysis completed."  # Modify or use GPT-based insights here
+        "total_calls_made": {
+            "Mon": team_performance['total_mon_call'],
+            "Tue": team_performance['total_tue_call'],
+            "Wed": team_performance['total_wed_call'],
+            "Thu": team_performance['total_thur_call'],
+            "Fri": team_performance['total_fri_call'],
+            "Sat": team_performance['total_sat_call'],
+            "Sun": team_performance['total_sun_call']
+        }
     }
+    
 
-def get_performance_trends_insight(sales_data, time_period):
+
+#monthly performance
+def get_performance_trends_insight(selected_month=None, from_date=None, to_date=None):
     """
-    Generate insights for sales performance trends over a specified time period using LLM.
+    Retrieve and return performance trends for a selected month or date range.
     """
-    # Group sales data by month
-    monthly_data = {}
-    for record in sales_data:
-        # Use the current date if 'created_at' is None
-        created_at = record.created_at or timezone.now()
-        month = created_at.strftime('%Y-%m')  # Example: '2024-10'
-        
-        if month not in monthly_data:
-            monthly_data[month] = {
-                'leads': 0,
-                'tours': 0,
-                'applications': 0,
+    # If a month is selected, filter by that month
+    if selected_month:
+        performance_data = SalesRecord.objects.filter(
+            created_at__month=selected_month.month, created_at__year=selected_month.year)
+    elif from_date and to_date:
+        # If a date range is provided, filter by that range
+        performance_data = SalesRecord.objects.filter(
+            created_at__date__gte=from_date, created_at__date__lte=to_date)
+    else:
+        # Default to the current month if no input is provided
+        current_month = timezone.now().month
+        performance_data = SalesRecord.objects.filter(created_at__month=current_month)
+
+    # Aggregate the performance data
+    monthly_performance = performance_data.aggregate(
+        total_leads_taken=Sum('lead_taken'),
+        total_tours_booked=Sum('tours_booked'),
+        total_applications=Sum('applications'),
+        total_mon_text=Sum('mon_text'),
+        total_tue_text=Sum('tue_text'),
+        total_wed_text=Sum('wed_text'),
+        total_thur_text=Sum('thur_text'),
+        total_fri_text=Sum('fri_text'),
+        total_sat_text=Sum('sat_text'),
+        total_sun_text=Sum('sun_text'),
+        total_mon_call=Sum('mon_call'),
+        total_tue_call=Sum('tue_call'),
+        total_wed_call=Sum('wed_call'),
+        total_thur_call=Sum('thur_call'),
+        total_fri_call=Sum('fri_call'),
+        total_sat_call=Sum('sat_call'),
+        total_sun_call=Sum('sun_call'),
+    )
+
+    # Prepare the response data
+    result = {
+        "performance_trends_summary": {
+            "total_leads_taken": monthly_performance['total_leads_taken'],
+            "total_tours_booked": monthly_performance['total_tours_booked'],
+            "total_applications": monthly_performance['total_applications'],
+            "total_text_messages_sent": {
+                "Mon": monthly_performance['total_mon_text'],
+                "Tue": monthly_performance['total_tue_text'],
+                "Wed": monthly_performance['total_wed_text'],
+                "Thu": monthly_performance['total_thur_text'],
+                "Fri": monthly_performance['total_fri_text'],
+                "Sat": monthly_performance['total_sat_text'],
+                "Sun": monthly_performance['total_sun_text']
+            },
+            "total_calls_made": {
+                "Mon": monthly_performance['total_mon_call'],
+                "Tue": monthly_performance['total_tue_call'],
+                "Wed": monthly_performance['total_wed_call'],
+                "Thu": monthly_performance['total_thur_call'],
+                "Fri": monthly_performance['total_fri_call'],
+                "Sat": monthly_performance['total_sat_call'],
+                "Sun": monthly_performance['total_sun_call']
             }
-        monthly_data[month]['leads'] += record.lead_taken
-        monthly_data[month]['tours'] += record.tours_booked
-        monthly_data[month]['applications'] += record.applications
-    
-    # Create a summary prompt for each month
-    monthly_summary = ""
-    for month, data in monthly_data.items():
-        monthly_summary += (
-            f"Month: {month}, Leads Taken: {data['leads']}, "
-            f"Tours Booked: {data['tours']}, Applications: {data['applications']}\n"
-        )
-    
-    prompt = (
-        f"Analyze sales trends over the {time_period} period based on the following monthly data:\n\n"
-        f"{monthly_summary}\n"
-        "Provide insights on trends, any noticeable improvements or declines, and suggestions for improvement."
-    )
-
-    # Call to OpenAI API
-    response = openai.ChatCompletion.create(
-        model="gpt-4",
-        messages=[
-            {"role": "system", "content": "You are an expert sales analyst."},
-            {"role": "user", "content": prompt}
-        ],
-        max_tokens=1000
-    )
-
-    # Return JSON response for performance trends
-    return {
-        "performance_trends_summary": response['choices'][0]['message']['content'].strip(),
-        "monthly_data": monthly_data  # Include raw monthly data as well in the response
+        }
     }
+
+    return json.dumps(result)  # Return the result in JSON format
